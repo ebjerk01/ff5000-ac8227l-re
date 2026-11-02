@@ -52,11 +52,56 @@ Each item is a small record read by its accessor, e.g. `GolfGetDrivingRange` rea
 (`Update`/`UpdateOnce`/`Value`/`DW`) via a `CJNIHandler` helper, then clears the `Update`
 dirty-bit. `Update`/`UpdateOnce` are set by the CAN decoder when new data arrives.
 
+## The decoder: class-per-vehicle + command dispatch
+The decode side is a C++ class hierarchy, one class per vehicle/box (`CCanGmSb`,
+`CCanAudi_ZMYT`, `CCanGolfBase`, `CCanGolfWc`, `CCanVwWc`, …), each with a
+`HandleCanCmd`/`DealCanData` ingest plus many `Deal_*` field decoders. A `Deal_*` writes the
+decoded struct (and sets the `Update`/`UpdateOnce` dirty-bits) that the `GolfGet*` accessors
+later read out to Java.
+
+`CCanGolfBase::HandleCanCmd(frame)` switches on a **sub-command byte** (`frame[1]`), with
+`frame[2]` a param/count and `frame[3..]` the payload:
+
+| subcmd | decoder / signal | subcmd | decoder / signal |
+|---|---|---|---|
+| 0x16 | Deal_Speed | 0x40 | Deal_CarStatus |
+| 0x20 | Deal_SWKey (steering-wheel keys) | 0x41 | Deal_SelfAdt |
+| 0x21 | Deal_AC | 0x50 | Deal_DrivingData |
+| 0x23 | Deal_Radar | 0x51 | Deal_Amp |
+| 0x25 | Deal_ParkStatus | 0x52 | Deal_EleData |
+| 0x26 | Deal_CarTime | 0x53 | Deal_NlhsData |
+| 0x27 | Deal_OutTemp | 0x54 | DealEleManageInfo |
+| 0x28 | Deal_RearAC | 0x60 | Deal_CarTip |
+| 0x29 | Deal_Eps | 0x61 | Deal_CarReports |
+| 0x2f | Deal_SWCmd | 0x62 | Deal_Convconsumers |
+| 0x30 | Deal_Ver | 0x63 | Deal_Service |
+| 0x24+ | Deal_BaseInfo | 0x66 | Deal_Tpms |
+| 0x7d | DealCarInfo | 0x68 | Deal_TpmsWarn |
+
+(Steering-wheel keys arrive as sub-command `0x20` — they come over the serial link, not as
+Linux input events.)
+
+**Worked example — `Deal_Speed(payload)`:**
+```c
+Update = 1; UpdateOnce = 1;
+speed  = (payload[0] | (payload[1] << 8)) >> 4;   // u16 little-endian / 16
+```
+Every `Deal_*` has the same shape: set the dirty-bits, then write field(s) at fixed struct
+offsets. Tabulating each one's byte math (and the richer `CCanGolfWc`/`CCanVwWc` page
+decoders) is the remaining mechanical work.
+
+## Full decode chain (end to end)
+```
+MCU serial [0x23][CMD][LEN][payload][XOR]
+  -> (Java Mcu recv) -> CCan<vehicle>::HandleCanCmd(payload)
+  -> switch(subcmd) -> Deal_<signal>(payload)   // byte math -> decoded struct + Update bits
+  -> GolfGet<signal>(JNIEnv) reads struct -> marshalled to a Java object -> UI / CarInfoService
+```
+
 ## Still being mapped
-- The **CAN-payload → struct decoder** (the inverse of the `GolfGet*` accessors) — the real
-  per-field decode, keyed by CAN id / box sub-command.
-- The **receive framing** confirmation (expected to mirror the TX `0x23`/CMD/LEN/XOR).
-- The full **CMD byte** list, and a cross-check against a live serial capture.
+- Per-`Deal_*` byte→field tables (mechanical), and the `CCanGolfWc`/`CCanVwWc` variants.
+- Receive framing confirmation (expected to mirror the TX `0x23`/CMD/LEN/XOR).
+- A cross-check against a live serial capture.
 
 ## Why it matters
 With the frame format known, a custom app or OS can speak to the MCU/box directly — build
