@@ -42,24 +42,37 @@ So dropping a (rebuildable) `8227L-8.bin` on a FAT USB stick makes the bootloade
 it. The same mechanism is a built-in **unbrick** path — reflash the stock package from a
 stick — as long as `lk` itself is intact (so: never include `lk` in a repacked package).
 
-## Does the USB/SD path verify images?
-Two kinds of check exist in `lk`:
-- **CRC / header integrity** (`check mkimg header`, `header crc mismatch`,
-  `check header, err(crc ...)`): integrity CRCs on the MTK image header, **not**
-  cryptographic signatures — satisfied by repacking correctly.
-- **MTK Secure Boot (SBC) signatures** (`img_auth_stor`, `missing boot signature`,
-  `Verifying Image Buffer...`, `Verification ok/fail`, `Search SECRO ... [VERIFIED]`,
-  `dump sw sbc:%x ... hw sbc:%d`): these run **only if the hardware secure-boot fuse is
-  blown**.
+## Does the USB/SD path verify images? — No (decompiled)
+`lk` decompiles cleanly at base `0x81E00000` (code starts at file offset 0x200, after the
+MTK mkimg wrapper). The update path:
 
-On these units SBC is almost always **off**: BROM is reachable without a signed download
-agent, the build is userdebug / test-keys, SELinux is permissive, `ro.debuggable=1`, OEM
-unlocking is on, and there is no `vbmeta` partition. With SBC off, the signature path is
-skipped and a correctly-repacked unsigned package flashes.
+- **`forfan_sdcard_update`**: mounts a FAT volume, reads a 4-byte **"cxj" already-applied
+  marker** and only flashes if it is not yet set, draws a progress bar (green
+  `0xff00ff00`), runs the flashing loop over the image table, hangs red (`0xffff0000`) if
+  any image errors, else writes the `"cxj"` marker and reboots.
+- **The per-image flasher**: looks up the partition by name, reads the image bytes from the
+  package buffer, handles sparse images, and **writes straight to the partition**. There is
+  **no hash, no signature, and no `img_auth` call anywhere in this path.**
 
-Confirm on your own unit (read-only): `getprop ro.boot.verifiedbootstate` (expect
-`orange`) and `cat /proc/cmdline`. For certainty, decompile `forfan_sdcard_update` in `lk`
-to see whether it calls `img_auth` unconditionally.
+The MTK Secure Boot routines (`img_auth`, `Verifying Image Buffer...`, `Verification
+ok/fail`, `Search SECRO ... [VERIFIED]`) do exist in `lk`, but they are wired into the
+*normal boot* path, not the USB/SD update path. The only checks on the update are **CRCs
+on the MTK image headers** — integrity, not cryptographic, and recomputed when repacking.
+
+So a correctly-repacked **unsigned** package flashes from a USB stick **regardless of the
+secure-boot fuse state**. (On these units SBC is in any case almost always off: BROM is
+reachable without a signed download agent, the build is userdebug/test-keys, SELinux is
+permissive, `ro.debuggable=1`, OEM unlocking is on, no `vbmeta`.)
+
+Operational note: the `"cxj"` done-marker means a given package applies once; to re-flash
+a changed package you reset/avoid that marker.
+
+## Tooling
+A small Python `info`/`unpack`/`pack` tool for the `88xj` container is in
+[tools/pack88xj.py](tools/pack88xj.py). It round-trips the stock `8227L-8.bin`
+byte-for-byte (identical SHA-256), confirming the format. To build a modified package:
+`unpack`, replace one `NN-*.img` (e.g. a Magisk-patched `02-boot.img`), `pack`. Never
+include `00-lk`, `01-arm2`, `05-tee`, or an `seccfg` image.
 
 ## Recovery
 `recovery` is a conventional Android recovery (header v0: `init`,
