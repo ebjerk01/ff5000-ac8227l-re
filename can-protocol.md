@@ -90,6 +90,25 @@ Every `Deal_*` has the same shape: set the dirty-bits, then write field(s) at fi
 offsets. Tabulating each one's byte math (and the richer `CCanGolfWc`/`CCanVwWc` page
 decoders) is the remaining mechanical work.
 
+## Signal decode dictionary (sample)
+Each `Deal_*` sets its dirty-bits then unpacks the payload (`frame[3..]`):
+
+- **Speed** (0x16): `u16_le(p[0],p[1]) >> 4`.
+- **Steering-wheel keys** (0x20): `Deal_SWKey(keyByte, pressState)`, acts on
+  `pressState==0x01`; key byte → vendor key id: `01→0x10001, 02→0x10002, 03→0x10044,
+  04→0x10043, 05→0x10003, 06→0x10000, 07→0x10005, 08→0x10054`.
+- **Outside temp** (0x27): `int16_le(p[1],p[2])` in 0.1 °C, flag `p[0]&1`, out-of-range →
+  sentinel -100.0 °C.
+- **TPMS** (0x66): `p[0]` selects the record (0 = pressures, else temps/other); four wheel
+  values `p[1..4]` + extra `p[5]`.
+- **Car status** (0x40): a second-level dispatch — `p[0]` is a status-group id (0x00…0xc1,
+  ~20 groups) bit-unpacking doors / lights / belts / mirrors / warnings; some groups
+  auto-open a UI screen on change.
+
+Other sub-commands (AC 0x21, DrivingData 0x50, Amp 0x51, EleData 0x52, Radar 0x23,
+BaseInfo 0x24+, …) follow the same small byte/bit-unpack shape; `CCanGolfWc`/`CCanVwWc`
+add richer multi-page VW decoders.
+
 ## Full decode chain (end to end)
 ```
 MCU serial [0x23][CMD][LEN][payload][XOR]
