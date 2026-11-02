@@ -7,7 +7,9 @@ build of Android 8.1. The unit in question is installed in a VW Passat CC with a
 
 These are the same chipsets and firmware family shipped under many brand names (Junsun,
 and other "TS platform" aftermarket units), so most findings should generalise across
-that class of device.
+that class of device. The hardware is a generic AC8227L board rebadged by many vendors —
+e.g. it is also sold as the **Radical R-C11VW1** (a 9" VW/Seat/Škoda unit) — and these
+units are frequently reflashed with Junsun/TS firmware, which is what this writeup covers.
 
 ## TL;DR
 - The firmware ships a **hardcoded root backdoor** in `/system/xbin/su`: one magic
