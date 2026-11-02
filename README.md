@@ -30,6 +30,7 @@ that class of device.
 | [ROOT.md](ROOT.md) | The `su` backdoor + the full whitelist scheme, from decompilation. The headline finding. |
 | [boot-and-package.md](boot-and-package.md) | The `8227L-8.bin` package format and the bootloader's USB-stick flasher (no-cable flashing). |
 | [car-data.md](car-data.md) | How car data reaches Android, the `CarInfoService` surface, the factory CAN log. |
+| [can-protocol.md](can-protocol.md) | The MCU serial frame format (sync/CMD/LEN/payload/XOR) and the two native libs behind it. |
 | [flash-magisk.md](flash-magisk.md) | Making root permanent / adding Magisk on this boot layout. |
 | [re-targets.md](re-targets.md) | Backlog of firmware components worth decompiling next. |
 | [tools/rc4_pkg.py](tools/rc4_pkg.py) | Decryptor for the `su` package-whitelist blob (`pkg.bin`). |
