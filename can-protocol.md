@@ -105,9 +105,20 @@ Each `Deal_*` sets its dirty-bits then unpacks the payload (`frame[3..]`):
   ~20 groups) bit-unpacking doors / lights / belts / mirrors / warnings; some groups
   auto-open a UI screen on change.
 
-Other sub-commands (AC 0x21, DrivingData 0x50, Amp 0x51, EleData 0x52, Radar 0x23,
-BaseInfo 0x24+, …) follow the same small byte/bit-unpack shape; `CCanGolfWc`/`CCanVwWc`
-add richer multi-page VW decoders.
+- **Base info / warnings** (0x24+): `p[0]` bits 2–7 are status flags; any set opens a
+  warning screen.
+- **Park radar** (0x23): front/rear block selected by a param; four sensor distances via
+  `CalcRadarValue(p[0..3])` + a timestamp, plus four nibble zones from `p[4]`,`p[5]`.
+- **Climate** (0x21, `Deal_AC`): ~9 packed bytes — `p[0]`/`p[1]` bits = power/auto/AC/
+  recirc/fan/mode, `p[2]`/`p[3]` = left/right set-temp, `p[4]` bit0 = °C/°F, `p[5..7]` =
+  rear AC + rear temp, `p[8]` = flags. (= the `requestCarAirInfo` data.)
+- **Trip computer** (0x50, `Deal_DrivingData`): second-level dispatch on `p[0]` —
+  distances `u16_le`, consumption/averages as 32-bit `/10` doubles or `u16` floats
+  (`0xffff` = invalid), 24-bit odometers.
+
+Other sub-commands (Amp 0x51, EleData 0x52, RearAC 0x28, Eps 0x29, ParkStatus 0x25, …)
+follow the same small byte/bit-unpack shape; `CCanGolfWc`/`CCanVwWc` add richer multi-page
+VW decoders.
 
 ## Full decode chain (end to end)
 ```
