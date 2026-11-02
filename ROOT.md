@@ -3,6 +3,12 @@
 Two independent ways in: an **unauthenticated network ADB shell**, and a **hardcoded
 backdoor in the vendor `su` binary** that turns that (unprivileged) shell into root.
 
+> **No PC, no cable, no USB adapter, no flashing is required to get root.** It's done
+> entirely over the network with `adb`. USB/BROM only enters the picture if you later
+> want to flash Magisk — see [flash-magisk.md](flash-magisk.md) — and even that can be
+> done without USB (at some risk). See
+> [root without any hardware](#root-without-any-hardware) below.
+
 <a name="adb"></a>
 ## 1. Unauthenticated ADB over the network
 The firmware starts `adbd` on **TCP 5555** and `ro.adb.secure` is empty, so there is **no
@@ -78,6 +84,30 @@ name. `pkg.bin` can be decrypted (and re-encrypted) with the included tool:
   device that drives on the vehicle's CAN bus.
 - The whitelist path means a number of vendor/partner packages (including a cloud client,
   `com.ts.car.client`) hold silent root by design.
+
+<a name="root-without-any-hardware"></a>
+## Root without any hardware
+Because ADB needs no authentication and the `su` backdoor works from that shell, getting
+a root shell requires **nothing but a network connection** to the unit — no PC-side
+flashing, no BROM mode, no USB-A-to-A ("male-to-male") cable, no service connector.
+
+```
+adb connect <unit-ip>:5555
+adb shell
+/system/xbin/su "@#zxcvbnmasdfghjklqwertyuiop1234567890,."
+id        # uid=0(root)
+```
+
+And root is **already persistent**: the backdoor lives in the read-only `system`
+partition, so it is present on every boot with nothing installed. If all you want is
+reliable root access, you are done here — you never need a cable or a flash.
+
+The USB adapter / BROM path is only relevant if you specifically want **Magisk** (a root
+manager, systemless modules, DenyList). Even that can be done without USB by patching and
+flashing `boot` on-device with `dd` as root — but then you lose the BROM "unbrick" safety
+net, so a bad `boot` flash could bootloop with only the stock recovery (if usable) as a
+USB-free fallback. Details and the risk tradeoff are in
+[flash-magisk.md](flash-magisk.md).
 
 ## Reproduction notes
 Pull your own `/system/xbin/su` and `/system/pkg.bin` over ADB and analyse them; the
