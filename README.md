@@ -33,7 +33,7 @@ that class of device.
 | [can-protocol.md](can-protocol.md) | The MCU serial frame format (sync/CMD/LEN/payload/XOR) and the two native libs behind it. |
 | [flash-magisk.md](flash-magisk.md) | Making root permanent / adding Magisk on this boot layout. |
 | [re-targets.md](re-targets.md) | Backlog of firmware components worth decompiling next. |
-| [tools/rc4_pkg.py](tools/rc4_pkg.py) | Decryptor for the `su` package-whitelist blob (`pkg.bin`). |
+| [tools/](tools/) | Scripts: `pkg.bin` decryptor, `88xj` (un)packer, and **experimental** boot-pull / boot-only package builder. See [tools/README.md](tools/README.md). |
 
 ## Device facts
 - **Model** FF-5000. **SoC** AutoChips AC8227L = MediaTek MT8127 (4× Cortex-A7, 32-bit
