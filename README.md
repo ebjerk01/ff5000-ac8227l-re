@@ -17,6 +17,10 @@ that class of device.
   network gets a shell. See [ROOT.md](ROOT.md#adb).
 - Any installed app can read the VIN and send frames to the car's CAN box through an
   **exported, unprotected service** (`CarInfoService`). See [car-data.md](car-data.md).
+- The USB-stick firmware update package (`8227L-8.bin`) is an **unsigned** container, and
+  the bootloader flashes it straight from a FAT USB stick — so a modified firmware can be
+  installed with no PC, no BROM, and no special cable. See
+  [boot-and-package.md](boot-and-package.md).
 - Making root persistent with Magisk is straightforward on this boot layout. See
   [flash-magisk.md](flash-magisk.md).
 
@@ -24,6 +28,7 @@ that class of device.
 | File | What |
 |---|---|
 | [ROOT.md](ROOT.md) | The `su` backdoor + the full whitelist scheme, from decompilation. The headline finding. |
+| [boot-and-package.md](boot-and-package.md) | The `8227L-8.bin` package format and the bootloader's USB-stick flasher (no-cable flashing). |
 | [car-data.md](car-data.md) | How car data reaches Android, the `CarInfoService` surface, the factory CAN log. |
 | [flash-magisk.md](flash-magisk.md) | Making root permanent / adding Magisk on this boot layout. |
 | [re-targets.md](re-targets.md) | Backlog of firmware components worth decompiling next. |

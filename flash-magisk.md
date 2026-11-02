@@ -10,21 +10,25 @@ customising the unit.
 > and it is the only part that involves USB/BROM.
 
 ## Do you need the USB-A-to-A cable?
-Two routes to flash the patched `boot`:
+Three routes to flash the patched `boot`:
 
-- **BROM / mtkclient over USB (needs the cable, recommended):** gives a guaranteed
-  "unbrick" path — a bad `boot` can always be rewritten from the backup, because BROM
-  talks to the chip below Android.
-- **`dd` on-device as root (no cable, riskier):** since you already have root, you can
-  back up and flash `boot` entirely over ADB with no USB at all (see Phase 1/2 below). The
-  cost is that there is **no BROM safety net**: if the patched `boot` bootloops, your only
-  USB-free fallback is the stock `recovery` partition (p11, left untouched) — *if* it is
-  reachable (`adb reboot recovery` before boot dies, or a key combo) and *if* its
-  ADB/sideload works, which varies by unit.
+- **USB stick via the bootloader (no cable, has its own recovery net — see
+  [boot-and-package.md](boot-and-package.md)):** the bootloader flashes an `8227L-8.bin`
+  package straight from a FAT USB stick, and the package is unsigned. Rebuild it with the
+  patched `boot` (leave every other image stock, and **never** include `lk`/`tee`/`seccfg`)
+  and flash from a stick. If something goes wrong, reflash the stock `8227L-8.bin` the same
+  way. This is the best no-cable option because the reflash-from-stick path is the recovery
+  net. Prove it first by repacking the *unchanged* stock images and confirming it boots.
+- **BROM / mtkclient over USB (needs the A-to-A cable):** the belt-and-braces option —
+  BROM talks to the chip below Android and can always rewrite `boot` from a backup.
+- **`dd` on-device as root (no cable, riskiest):** back up and flash `boot` over ADB with
+  no USB at all (Phase 1/2 below). The weakness is there's no guaranteed unbrick if the
+  patched `boot` bootloops — you'd fall back to the USB-stick reflash or stock recovery.
 
-Bottom line: for root alone, no cable. For Magisk, the ~€3 A-to-A cable (or a micro-USB
-service port if present) is cheap insurance for the one step — writing `boot` — where a
-mistake without a safety net can brick the unit.
+Bottom line: for root alone, no cable and no flashing at all. For Magisk, the USB-stick
+package route gets you there with no cable *and* a recovery net; the A-to-A cable (or a
+micro-USB service port if present) is still the most bulletproof insurance for the one
+step — writing `boot` — where a mistake can brick the unit.
 
 > Flashing can brick the device. Take a full backup first and keep a verified recovery
 > path. **Never write `LK` (p6), `TEE1/2` (p7/p8), or `SECCFG` (p5).** Everything here is
