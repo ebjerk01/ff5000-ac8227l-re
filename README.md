@@ -35,6 +35,7 @@ units are frequently reflashed with Junsun/TS firmware, which is what this write
 | [can-protocol.md](can-protocol.md) | The MCU serial frame format (sync/CMD/LEN/payload/XOR) and the two native libs behind it. |
 | [can-java-model.md](can-java-model.md) | The Java CAN model (`com.lgb.canmodule`), the per-vehicle JNI accessor surface, decoded struct layouts, and the factory raw-CAN logger. |
 | [carclient.md](carclient.md) | The hidden `com.ts.car.client` cloud agent: MQTT telemetry (GPS/speed/installed apps), remote APK install/uninstall, and its phone-home endpoints. |
+| [juncan-txz.md](juncan-txz.md) | The `com.txznet.trace` TXZ voice/telematics agent: boot auto-start, WebSocket to `txzing.com`, android_id + location reporting. |
 | [flash-magisk.md](flash-magisk.md) | Making root permanent / adding Magisk on this boot layout. |
 | [re-targets.md](re-targets.md) | Backlog of firmware components worth decompiling next. |
 | [tools/](tools/) | Scripts: `pkg.bin` decryptor, `88xj` (un)packer, and **experimental** boot-pull / boot-only package builder. See [tools/README.md](tools/README.md). |
