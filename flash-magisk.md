@@ -9,6 +9,19 @@ customising the unit.
 > You do **not** need any of this for root — see [ROOT.md](ROOT.md). Magisk is optional,
 > and it is the only part that involves USB/BROM.
 
+> ⚠️ **Live result (one unit, 2026-11-03): both no-cable routes failed; use the A-to-A cable.**
+> On a Radical R-C11VW1 reflashed with Junsun firmware:
+> - **On-device `dd` to `boot` does not persist** — it reports success but the partition reads
+>   back unchanged even after dropping caches (`force_ro=0`, so it's a platform/eMMC write-
+>   protect on the boot region). You cannot flash `boot` from Android on this unit.
+> - **The lk USB-stick updater would not trigger** — no touch gesture (1- or 5-finger), correct
+>   port, or cold boot entered it (see [boot-and-package.md](boot-and-package.md): likely a
+>   Junsun lk that can't read this unit's touch panel). The 8888 factory menu has no system-
+>   update entry (only "Mcu Update", which flashes the MCU, not Android).
+>
+> Net: the **BROM + USB-A-to-A cable + mtkclient** route (below) is the realistic way to flash
+> `boot` on this unit. Your mileage may vary on a unit still running its *original* lk.
+
 ## Do you need the USB-A-to-A cable?
 Three routes to flash the patched `boot`:
 

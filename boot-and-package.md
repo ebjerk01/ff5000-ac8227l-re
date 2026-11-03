@@ -46,10 +46,11 @@ stick — as long as `lk` itself is intact (so: never include `lk` in a repacked
 `lk` decompiles cleanly at base `0x81E00000` (code starts at file offset 0x200, after the
 MTK mkimg wrapper). The update path:
 
-- **`forfan_sdcard_update`**: mounts a FAT volume, reads a 4-byte **"cxj" already-applied
-  marker** and only flashes if it is not yet set, draws a progress bar (green
-  `0xff00ff00`), runs the flashing loop over the image table, hangs red (`0xffff0000`) if
-  any image errors, else writes the `"cxj"` marker and reboots.
+- **`forfan_sdcard_update`**: mounts a FAT volume, scans `/udisk0..4` for the package, draws
+  a progress bar (green `0xff00ff00`), runs the flashing loop over the image table, hangs red
+  (`0xffff0000`) if any image errors, else reboots. **Correction:** `[cxj]` is the lk author's
+  **log-tag initials** (seen throughout as `[UPG] ... [cxj]: update %s`), *not* an
+  "already-applied marker" — there is no such marker gating re-flashes.
 - **The per-image flasher**: looks up the partition by name, reads the image bytes from the
   package buffer, handles sparse images, and **writes straight to the partition**. There is
   **no hash, no signature, and no `img_auth` call anywhere in this path.**
@@ -64,8 +65,23 @@ secure-boot fuse state**. (On these units SBC is in any case almost always off: 
 reachable without a signed download agent, the build is userdebug/test-keys, SELinux is
 permissive, `ro.debuggable=1`, OEM unlocking is on, no `vbmeta`.)
 
-Operational note: the `"cxj"` done-marker means a given package applies once; to re-flash
-a changed package you reset/avoid that marker.
+Operational note: there is no done-marker (the "cxj" above was a mis-read of a log tag); a
+valid package on the stick is re-flashable each time the updater actually runs.
+
+## How the updater is ENTERED — and a live failure to flag
+The updater only runs when lk sets an internal `upgrade_mode` flag; otherwise it logs
+`<file> does NOT exsit in any udisk. skip upgrade` and boots normally. `upgrade_mode` is set
+by an **early touch-panel press** check at boot (strings `----lk[TP] is pressed!`,
+`----lk[TP] is not pressed!`, and `----lk[TP] 5 fingers!`). It supports both full and
+**partial** (e.g. boot-only) packages.
+
+**Caveat from a live unit:** on a Radical R-C11VW1 reflashed with Junsun firmware, **no touch
+gesture (1-finger, 5-finger), correct USB port, or cold boot triggered the updater** — it
+always boots normally. The most likely cause is a **Junsun lk + non-matching touch
+controller**: lk can't read the panel, so `upgrade_mode` never sets. The original (matching)
+lk is what made the vendor's own USB flash work. If your unit's touch gesture doesn't trigger
+the updater, this is why, and BROM is the fallback. (The lk is position-independent, so the
+exact non-touch/key trigger couldn't be pinned statically.)
 
 ## Tooling
 A small Python `info`/`unpack`/`pack` tool for the `88xj` container is in
