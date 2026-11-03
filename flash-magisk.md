@@ -1,5 +1,12 @@
 # Making root permanent / adding Magisk (FF-5000, AC8227L)
 
+> ⛔ **NOT CONFIRMED WORKING.** On the one unit tested (a Junsun-reflashed Radical R-C11VW1),
+> Magisk was **never successfully flashed**: the patched boot was built + verified, but the lk
+> USB-stick updater would not trigger and on-device `dd` to `boot` does not persist (platform
+> write-protect) — see the live-result box below. The BROM + USB-A-to-A route is expected to
+> work but was **not attempted**. Treat this page as a procedure/plan, not a proven result.
+> (Root itself — the `su` backdoor — IS confirmed and needs none of this.)
+
 The `su` backdoor already survives reboots (it lives in the read-only `system`
 partition), so you *have* persistent root access already. Magisk adds what the backdoor
 doesn't: a real root manager (per-app grant/deny), **systemless** modules (no `system`
