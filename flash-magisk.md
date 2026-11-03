@@ -41,6 +41,18 @@ step — writing `boot` — where a mistake can brick the unit.
 - **No `vbmeta` partition** → AVB/dm-verity is not enforced (matches a userdebug build
   with SELinux permissive and `ro.debuggable=1`). Nothing to "disable" or zero.
 
+### Confirmed from a live unit
+A live `boot` image (read via the `su` root, read-only) parses as: header **v0**, page
+size **2048**, **gzip** ramdisk, kernel @ `0x80008000`, cmdline `buildvariant=userdebug`,
+no second/dtb. Kernel and ramdisk each carry the **MediaTek 512-byte header**
+(`0x88168858`); `magiskboot` auto-detects and preserves it, so a plain Magisk patch
+repacks correctly — no manual unwrap needed.
+
+**`verifiedbootstate` note:** on these userdebug/test-keys builds it reads **`green`**, which
+is *not* a lock indicator and is **not** a blocker. Flashing works because the bootloader
+does no signature check on the update package (see [boot-and-package.md](boot-and-package.md))
+and `sys.oem_unlock_allowed=1`. Don't wait for an "orange" state that won't appear.
+
 ## Phase 0 — full backup via mtkclient (BROM), before any write
 Put the unit in BROM mode (power off; short the test point / hold the relevant pad while
 plugging USB) and read everything out with [mtkclient](https://github.com/bkerler/mtkclient):
